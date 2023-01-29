@@ -18,8 +18,449 @@ body {
 }
 
 main {
+  display: block;
+  min-height: 0;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+a {
+  color: inherit;
+}
+
+h1 {
+  font-size: 1.6rem;
+}
+
+h2 {
+  margin-top: 32px;
+  font-size: 1.1rem;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid #8884;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button.link {
+  border: none;
+  text-decoration: underline;
+  padding: 0 6px;
+}
+
+button.danger {
+  color: #d33;
+}
+
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.row input:first-child {
+  flex: 1;
+  min-width: 160px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stack > input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+}
+
+.list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #8883;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px;
+  border-bottom: 1px solid #8883;
+  text-align: left;
+}
+
+.muted {
+  opacity: 0.6;
+}
+
+.error {
+  color: #d33;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.overdue {
+  color: #d33;
+}
+
+main.wide {
+  max-width: none;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-top: 1px solid #8883;
+  border-left: 1px solid #8883;
+}
+
+.calendar > div {
+  border-right: 1px solid #8883;
+  border-bottom: 1px solid #8883;
+  padding: 4px;
+}
+
+.weekday {
+  font-weight: 600;
+  text-align: center;
+}
+
+.day {
+  min-height: 96px;
+  min-width: 0;
+}
+
+.day.other {
+  opacity: 0.45;
+}
+
+.date {
+  display: block;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.chip {
+  display: block;
+  margin-top: 2px;
+  padding: 2px 4px;
+  overflow: hidden;
+  font-size: 0.75rem;
+  text-decoration: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: #4a90e233;
+  border-radius: 4px;
+}
+
+.chip.overdue {
+  background: #d3333344;
+  color: inherit;
+}
+
+.timeline {
+  position: relative;
+  max-height: calc(100vh - 190px);
+  overflow: auto;
+  border: 1px solid #8883;
+  border-radius: 6px;
+}
+
+.tl-row {
+  position: relative;
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  border-bottom: 1px solid #8883;
+}
+
+.tl-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--background);
+}
+
+.tl-left {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  background: var(--background);
+  border-right: 1px solid #8883;
+}
+
+.tl-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tl-status {
+  flex: none;
+  padding: 1px 6px;
+  font-size: 0.7rem;
+  border-radius: 4px;
+  background: #8883;
+}
+
+.tl-status.doing {
+  background: #4a90e244;
+}
+
+.tl-status.done {
+  background: #7cb34244;
+}
+
+.tl-progress {
+  flex: none;
+  width: 56px;
+  height: 6px;
+  overflow: hidden;
+  background: #8884;
+  border-radius: 3px;
+}
+
+.tl-progress > span {
+  display: block;
+  height: 100%;
+}
+
+.tl-progress .done,
+.tl-bar.done {
+  background: #7cb342;
+}
+
+.tl-progress .doing,
+.tl-bar.doing {
+  background: #4a90e2;
+}
+
+.tl-track {
+  position: relative;
+  flex: none;
+}
+
+.tl-month {
+  position: absolute;
+  top: 0;
+  height: 26px;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  overflow: hidden;
+  font-size: 0.75rem;
+  border-left: 1px solid #8883;
+}
+
+.tl-tick {
+  position: absolute;
+  top: 30px;
+  padding-left: 2px;
+  font-size: 0.65rem;
+  opacity: 0.6;
+}
+
+.tl-grid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid #8882;
+}
+
+.tl-today {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid #e24a4a88;
+}
+
+.tl-bar {
+  position: absolute;
+  top: 9px;
+  height: 18px;
+  min-width: 6px;
+  box-sizing: border-box;
+  background: #8888;
+  border-radius: 4px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.tl-bar.late {
+  outline: 2px solid #d33;
+}
+
+.tl-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.tl-handle.left {
+  left: 0;
+}
+
+.tl-handle.right {
+  right: 0;
+}
+
+button.active {
+  background: #8883;
+}
+
+.shell {
   display: flex;
   min-height: 100vh;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 220px;
+  height: 100vh;
+  box-sizing: border-box;
+  padding: 16px 12px;
+  overflow-y: auto;
+  border-right: 1px solid #8883;
+}
+
+.sidebar ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.brand {
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.side-title {
+  margin-bottom: 6px;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.side-link {
+  display: block;
+  padding: 6px 8px;
+  overflow: hidden;
+  font-size: 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-radius: 6px;
+}
+
+.side-link:hover {
+  background: #8882;
+}
+
+.side-link.active {
+  background: #8883;
+}
+
+.side-sub {
+  margin: 2px 0 6px 14px !important;
+}
+
+.side-empty {
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+
+.side-add {
+  margin-top: 12px;
+  text-align: left;
+  border-style: dashed;
+}
+
+.side-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.side-form .row {
+  margin: 0;
+}
+
+.project-title {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+}
+
+.title-name {
+  padding: 0 6px;
+  font: inherit;
+  font-weight: inherit;
+  border: 1px solid transparent;
+}
+
+.title-name:hover {
+  border-color: #8884;
+}
+
+.inline-form input {
+  font: inherit;
+  font-weight: inherit;
 }
