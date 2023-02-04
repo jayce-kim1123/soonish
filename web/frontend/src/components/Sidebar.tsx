@@ -7,13 +7,13 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { Project } from "../lib/types";
 
-// Pages that change the project list announce it with this event.
+/** 프로젝트 목록이 바뀐 화면은 이 이벤트로 사이드바에 알린다. */
 export const PROJECTS_CHANGED = "projects-changed";
 
 const VIEWS = [
-  ["timeline", "Timeline"],
-  ["calendar", "Calendar"],
-  ["", "Issues"],
+  ["timeline", "타임라인"],
+  ["calendar", "캘린더"],
+  ["", "이슈 목록"],
 ];
 
 export default function Sidebar() {
@@ -56,7 +56,7 @@ export default function Sidebar() {
       <Link href="/" className="brand">
         Soonish
       </Link>
-      <div className="side-title">Projects</div>
+      <div className="side-title">프로젝트</div>
       <ul>
         {projects.map((project) => (
           <li key={project.key}>
@@ -82,23 +82,30 @@ export default function Sidebar() {
             )}
           </li>
         ))}
-        {projects.length === 0 && <li className="muted side-empty">No projects yet.</li>}
+        {projects.length === 0 && <li className="muted side-empty">아직 프로젝트가 없습니다.</li>}
       </ul>
+      <div className="side-title side-settings">설정</div>
+      <Link href="/settings/phases" className={pathname.startsWith("/settings/phases") ? "side-link active" : "side-link"}>
+        단계 관리
+      </Link>
+      <Link href="/settings/members" className={pathname.startsWith("/settings/members") ? "side-link active" : "side-link"}>
+        멤버 관리
+      </Link>
       {adding ? (
         <form onSubmit={create} className="side-form">
           <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="KEY" maxLength={10} required autoFocus />
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Project name" required />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="프로젝트 이름" required />
           {error && <p className="error">{error}</p>}
           <div className="row">
-            <button type="submit">Create</button>
+            <button type="submit">만들기</button>
             <button type="button" onClick={() => setAdding(false)}>
-              Cancel
+              취소
             </button>
           </div>
         </form>
       ) : (
         <button className="side-add" onClick={() => setAdding(true)}>
-          + New project
+          + 새 프로젝트
         </button>
       )}
     </nav>

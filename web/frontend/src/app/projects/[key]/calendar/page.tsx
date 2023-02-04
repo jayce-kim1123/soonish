@@ -4,23 +4,26 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import ErrorNote from "../../../../components/ErrorNote";
+import PhaseChips from "../../../../components/PhaseChips";
 import ProjectTitle from "../../../../components/ProjectTitle";
 import { api } from "../../../../lib/api";
 import { isOverdue, pad, toIso } from "../../../../lib/dates";
 import { Issue, Status } from "../../../../lib/types";
+import { usePhases } from "../../../../lib/usePhases";
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 export default function CalendarPage({ params }: { params: { key: string } }) {
   const { key } = params;
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth()); // 0-based
+  const { phases, visible, toggle } = usePhases();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // The grid starts on the Sunday on or before the 1st and covers whole weeks.
+  // 달력은 1일이 속한 주의 일요일부터 시작하고, 한 주 단위로 끝까지 채운다.
   const first = new Date(year, month, 1);
   const gridStart = new Date(year, month, 1 - first.getDay());
   const weeks = Math.ceil((first.getDay() + new Date(year, month + 1, 0).getDate()) / 7);
@@ -47,28 +50,29 @@ export default function CalendarPage({ params }: { params: { key: string } }) {
     setMonth(next.getMonth());
   }
 
-  // An issue is drawn on every day from its start to its due date (or on the single date it has).
+  // 날마다, 켜 둔 단계 중 그날을 포함하는 일정을 단계 색 칩으로 그린다.
   const onDay = (iso: string) =>
-    issues.filter((i) => {
-      const start = i.start_date ?? i.due_date;
-      const end = i.due_date ?? i.start_date;
-      return start !== null && end !== null && start <= iso && iso <= end;
-    });
+    issues.flatMap((issue) =>
+      issue.phases
+        .filter((d) => d.start_date && d.end_date && visible.has(d.phase) && d.start_date <= iso && iso <= d.end_date)
+        .map((d) => ({ issue, phase: phases.find((k) => k.id === d.phase) })),
+    );
 
   return (
     <main className="wide">
-      <ProjectTitle projectKey={key} suffix={`calendar · ${year}-${pad(month + 1)}`} />
+      <ProjectTitle projectKey={key} suffix={`캘린더 · ${year}년 ${month + 1}월`} />
+      <PhaseChips phases={phases} visible={visible} onToggle={toggle} />
       <div className="row">
-        <button onClick={() => step(-1)}>Previous</button>
+        <button onClick={() => step(-1)}>이전</button>
         <button
           onClick={() => {
             setYear(now.getFullYear());
             setMonth(now.getMonth());
           }}
         >
-          Today
+          오늘
         </button>
-        <button onClick={() => step(1)}>Next</button>
+        <button onClick={() => step(1)}>다음</button>
       </div>
       <ErrorNote message={error} />
       <div className="calendar">
@@ -82,12 +86,13 @@ export default function CalendarPage({ params }: { params: { key: string } }) {
           return (
             <div key={iso} className={day.getMonth() === month ? "day" : "day other"}>
               <span className="date">{day.getDate()}</span>
-              {onDay(iso).map((issue) => (
+              {onDay(iso).map(({ issue, phase }) => (
                 <Link
-                  key={issue.number}
+                  key={`${issue.number}-${phase?.id}`}
                   href={`/projects/${key}/issues/${issue.number}`}
                   className={isOverdue(issue, statuses) ? "chip overdue" : "chip"}
-                  title={issue.title}
+                  style={{ borderLeft: `4px solid ${phase?.color ?? "#888"}` }}
+                  title={`${phase?.name}: ${issue.title}`}
                 >
                   {issue.ref} {issue.title}
                 </Link>

@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 
 import { api } from "../lib/api";
-import { CATEGORIES, Category, Status } from "../lib/types";
+import { CATEGORIES, CATEGORY_LABEL, Category, Status } from "../lib/types";
 import ErrorNote from "./ErrorNote";
 
 export default function StatusPanel({
@@ -41,7 +41,7 @@ export default function StatusPanel({
   }
 
   function rename(status: Status) {
-    const next = prompt("Status name", status.name);
+    const next = prompt("상태 이름", status.name);
     if (next && next !== status.name) {
       run(() => api(`/projects/${projectKey}/statuses/${status.id}`, { method: "PATCH", body: { name: next } }));
     }
@@ -58,42 +58,42 @@ export default function StatusPanel({
 
   return (
     <section>
-      <h2>Statuses</h2>
+      <h2>상태</h2>
       <ErrorNote message={error} />
       <ul className="list">
         {statuses.map((status) => (
           <li key={status.id}>
             <span>
-              {status.name} <span className="muted">({status.category})</span>
+              {status.name} <span className="muted">({CATEGORY_LABEL[status.category]})</span>
             </span>
             <span>
               <button className="link" onClick={() => move(status, -1)}>
-                Up
+                위로
               </button>
               <button className="link" onClick={() => move(status, 1)}>
-                Down
+                아래로
               </button>
               <button className="link" onClick={() => rename(status)}>
-                Rename
+                이름 변경
               </button>
               <button
                 className="link"
                 onClick={() => run(() => api(`/projects/${projectKey}/statuses/${status.id}`, { method: "DELETE" }))}
               >
-                Delete
+                삭제
               </button>
             </span>
           </li>
         ))}
       </ul>
       <form onSubmit={add} className="row">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="New status" required />
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="새 상태 이름" required />
         <select value={category} onChange={(e) => setCategory(e.target.value as Category)}>
           {CATEGORIES.map((c) => (
-            <option key={c}>{c}</option>
+            <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>
           ))}
         </select>
-        <button type="submit">Add status</button>
+        <button type="submit">상태 추가</button>
       </form>
     </section>
   );

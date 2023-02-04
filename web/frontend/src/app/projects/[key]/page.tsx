@@ -10,17 +10,18 @@ import { PROJECTS_CHANGED } from "../../../components/Sidebar";
 import StatusPanel from "../../../components/StatusPanel";
 import { api } from "../../../lib/api";
 import { isOverdue, schedule } from "../../../lib/dates";
-import { ISSUE_TYPES, Issue, IssueType, PRIORITIES, Priority, Status } from "../../../lib/types";
+import { ISSUE_TYPES, Issue, IssueType, PRIORITIES, PRIORITY_LABEL, Priority, Member, Status, TYPE_LABEL } from "../../../lib/types";
 
 const ORDERINGS = [
-  ["-number", "Newest"],
-  ["number", "Oldest"],
-  ["-updated_at", "Recently updated"],
-  ["due_date", "Due date (soonest first)"],
-  ["-due_date", "Due date (latest first)"],
-  ["-priority", "Priority (high first)"],
-  ["priority", "Priority (low first)"],
-  ["title", "Title"],
+  ["-number", "최신순"],
+  ["number", "오래된 순"],
+  ["-updated_at", "최근 수정순"],
+  ["start", "시작이 빠른 순"],
+  ["end", "종료가 빠른 순"],
+  ["-end", "종료가 늦은 순"],
+  ["-priority", "우선순위 높은 순"],
+  ["priority", "우선순위 낮은 순"],
+  ["title", "제목순"],
 ];
 
 export default function ProjectPage({ params }: { params: { key: string } }) {
@@ -34,12 +35,13 @@ export default function ProjectPage({ params }: { params: { key: string } }) {
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [assigneeFilter, setAssigneeFilter] = useState("");
+  const [members, setMembers] = useState<Member[]>([]);
   const [ordering, setOrdering] = useState("-number");
 
   const [title, setTitle] = useState("");
   const [issueType, setIssueType] = useState<IssueType>("task");
   const [priority, setPriority] = useState<Priority>("medium");
-  const [dueDate, setDueDate] = useState("");
   const [overdueOnly, setOverdueOnly] = useState(false);
 
   const loadStatuses = useCallback(() => {
@@ -52,6 +54,7 @@ export default function ProjectPage({ params }: { params: { key: string } }) {
     if (statusFilter) query.set("status", statusFilter);
     if (priorityFilter) query.set("priority", priorityFilter);
     if (typeFilter) query.set("issue_type", typeFilter);
+    if (assigneeFilter) query.set("assignee", assigneeFilter);
     if (overdueOnly) query.set("overdue", "1");
     api<Issue[]>(`/projects/${key}/issues?${query}`)
       .then((list) => {
@@ -59,10 +62,11 @@ export default function ProjectPage({ params }: { params: { key: string } }) {
         setError(null);
       })
       .catch((e) => setError(e.message));
-  }, [key, q, statusFilter, priorityFilter, typeFilter, overdueOnly, ordering]);
+  }, [key, q, statusFilter, priorityFilter, typeFilter, assigneeFilter, overdueOnly, ordering]);
 
   useEffect(() => {
     loadStatuses();
+    api<Member[]>("/members").then(setMembers).catch(() => setMembers([]));
   }, [key, loadStatuses]);
 
   useEffect(loadIssues, [loadIssues]);
@@ -72,10 +76,9 @@ export default function ProjectPage({ params }: { params: { key: string } }) {
     try {
       await api(`/projects/${key}/issues`, {
         method: "POST",
-        body: { title, issue_type: issueType, priority, due_date: dueDate || null },
+        body: { title, issue_type: issueType, priority },
       });
       setTitle("");
-      setDueDate("");
       loadIssues();
     } catch (e) {
       setError((e as Error).message);
@@ -83,7 +86,7 @@ export default function ProjectPage({ params }: { params: { key: string } }) {
   }
 
   async function removeProject() {
-    if (!confirm(`Delete ${key} and all of its issues?`)) return;
+    if (!confirm(`${key} 프로젝트와 안에 있는 모든 이슈를 삭제할까요?`)) return;
     await api(`/projects/${key}`, { method: "DELETE" });
     window.dispatchEvent(new Event(PROJECTS_CHANGED));
     router.push("/");
@@ -95,32 +98,31 @@ export default function ProjectPage({ params }: { params: { key: string } }) {
     <main>
       <ProjectTitle projectKey={key}>
         <button className="link danger" onClick={removeProject}>
-          Delete project
+          프로젝트 삭제
         </button>
       </ProjectTitle>
       <ErrorNote message={error} />
 
       <form onSubmit={create} className="row">
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="New issue title" required />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="새 이슈 제목" required />
         <select value={issueType} onChange={(e) => setIssueType(e.target.value as IssueType)}>
           {ISSUE_TYPES.map((t) => (
-            <option key={t}>{t}</option>
+            <option key={t} value={t}>{TYPE_LABEL[t]}</option>
           ))}
         </select>
         <select value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
           {PRIORITIES.map((p) => (
-            <option key={p}>{p}</option>
+            <option key={p} value={p}>{PRIORITY_LABEL[p]}</option>
           ))}
         </select>
-        <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} title="Due date" />
-        <button type="submit">Create issue</button>
+        <button type="submit">이슈 만들기</button>
       </form>
 
       <h2>Issues</h2>
       <div className="row filters">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="제목 검색" />
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="">Any status</option>
+          <option value="">모든 상태</option>
           {statuses.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
@@ -128,19 +130,27 @@ export default function ProjectPage({ params }: { params: { key: string } }) {
           ))}
         </select>
         <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
-          <option value="">Any priority</option>
+          <option value="">모든 우선순위</option>
           {PRIORITIES.map((p) => (
-            <option key={p}>{p}</option>
+            <option key={p} value={p}>{PRIORITY_LABEL[p]}</option>
           ))}
         </select>
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-          <option value="">Any type</option>
+          <option value="">모든 유형</option>
           {ISSUE_TYPES.map((t) => (
-            <option key={t}>{t}</option>
+            <option key={t} value={t}>{TYPE_LABEL[t]}</option>
+          ))}
+        </select>
+        <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)}>
+          <option value="">모든 담당자</option>
+          {members.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
           ))}
         </select>
         <label className="check">
-          <input type="checkbox" checked={overdueOnly} onChange={(e) => setOverdueOnly(e.target.checked)} /> Overdue
+          <input type="checkbox" checked={overdueOnly} onChange={(e) => setOverdueOnly(e.target.checked)} /> 마감 초과
         </label>
         <select value={ordering} onChange={(e) => setOrdering(e.target.value)}>
           {ORDERINGS.map(([value, label]) => (
@@ -153,12 +163,13 @@ export default function ProjectPage({ params }: { params: { key: string } }) {
       <table>
         <thead>
           <tr>
-            <th>Issue</th>
-            <th>Title</th>
-            <th>Status</th>
-            <th>Priority</th>
-            <th>Type</th>
-            <th>Schedule</th>
+            <th>이슈</th>
+            <th>제목</th>
+            <th>상태</th>
+            <th>우선순위</th>
+            <th>유형</th>
+            <th>상위 이슈</th>
+            <th>일정</th>
           </tr>
         </thead>
         <tbody>
@@ -169,15 +180,16 @@ export default function ProjectPage({ params }: { params: { key: string } }) {
               </td>
               <td>{issue.title}</td>
               <td>{statusName(issue.status)}</td>
-              <td>{issue.priority}</td>
-              <td>{issue.issue_type}</td>
+              <td>{PRIORITY_LABEL[issue.priority]}</td>
+              <td>{TYPE_LABEL[issue.issue_type]}</td>
+              <td>{issue.parent ? `${key}-${issue.parent}` : ""}</td>
               <td className={isOverdue(issue, statuses) ? "overdue" : undefined}>{schedule(issue)}</td>
             </tr>
           ))}
           {issues.length === 0 && (
             <tr>
-              <td colSpan={6} className="muted">
-                No issues.
+              <td colSpan={7} className="muted">
+                이슈가 없습니다.
               </td>
             </tr>
           )}

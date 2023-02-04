@@ -5,19 +5,22 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import ErrorNote from "../../../../components/ErrorNote";
+import PhaseChips from "../../../../components/PhaseChips";
 import ProjectTitle from "../../../../components/ProjectTitle";
 import { api } from "../../../../lib/api";
-import { dayNumber, fromDayNumber, isOverdue, today } from "../../../../lib/dates";
-import { Category, Issue, Status } from "../../../../lib/types";
+import { dayNumber, fromDayNumber, isOverdue, issueSpan, today } from "../../../../lib/dates";
+import { Category, Issue, IssuePhase, Member, Phase, Status } from "../../../../lib/types";
+import { usePhases } from "../../../../lib/usePhases";
 
 const ROW_HEIGHT = 36;
-const LEFT_WIDTH = 340;
-const ZOOMS: Record<string, number> = { Day: 28, Week: 10, Month: 4 };
+const LEFT_WIDTH = 360;
+const ZOOMS: Record<string, number> = { 일: 28, 주: 10, 월: 4 };
 const PROGRESS: Record<Category, number> = { todo: 0, doing: 50, done: 100 };
 
 type Mode = "move" | "start" | "end";
 interface Drag {
   number: number;
+  phase: number;
   mode: Mode;
   originX: number;
   start: number;
@@ -25,19 +28,16 @@ interface Drag {
   delta: number;
 }
 
-function span(issue: Issue): [number, number] | null {
-  const start = issue.start_date ?? issue.due_date;
-  const end = issue.due_date ?? issue.start_date;
-  return start && end ? [dayNumber(start), dayNumber(end)] : null;
-}
-
 export default function TimelinePage({ params }: { params: { key: string } }) {
   const { key } = params;
   const router = useRouter();
   const scroller = useRef<HTMLDivElement>(null);
+  const { phases, visible, toggle } = usePhases();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
-  const [zoom, setZoom] = useState("Week");
+  const [members, setMembers] = useState<Member[]>([]);
+  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+  const [zoom, setZoom] = useState("주");
   const [error, setError] = useState<string | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const dragRef = useRef<Drag | null>(null);
@@ -47,10 +47,12 @@ export default function TimelinePage({ params }: { params: { key: string } }) {
     Promise.all([
       api<Issue[]>(`/projects/${key}/issues?ordering=number`),
       api<Status[]>(`/projects/${key}/statuses`),
+      api<Member[]>("/members"),
     ])
-      .then(([i, s]) => {
+      .then(([i, s, m]) => {
         setIssues(i);
         setStatuses(s);
+        setMembers(m);
         setError(null);
       })
       .catch((e) => setError(e.message));
@@ -58,37 +60,76 @@ export default function TimelinePage({ params }: { params: { key: string } }) {
 
   useEffect(load, [load]);
 
-  // The visible range covers every scheduled issue and today, with some slack on both sides.
+  const phaseById = useMemo(() => new Map(phases.map((k) => [k.id, k])), [phases]);
+  const categoryOf = useCallback(
+    (issue: Issue): Category => statuses.find((s) => s.id === issue.status)?.category ?? "todo",
+    [statuses],
+  );
+
+  // 이슈 트리: 이슈마다 한 행이고, 하위 이슈는 상위 이슈 밑에 들여써서 보여 준다 (깊이 제한 없음).
+  const { rows, children } = useMemo(() => {
+    const byParent = new Map<number | null, Issue[]>();
+    for (const issue of issues) {
+      const list = byParent.get(issue.parent) ?? [];
+      list.push(issue);
+      byParent.set(issue.parent, list);
+    }
+    const out: { issue: Issue; depth: number }[] = [];
+    const walk = (parent: number | null, depth: number) => {
+      for (const issue of byParent.get(parent) ?? []) {
+        out.push({ issue, depth });
+        if (!collapsed.has(issue.number)) walk(issue.number, depth + 1);
+      }
+    };
+    walk(null, 0);
+    return { rows: out, children: byParent };
+  }, [issues, collapsed]);
+
+  // 이슈의 진행률. 하위 이슈가 없으면 자기 상태로, 있으면 하위 이슈 진행률의 평균으로 구한다.
+  const progress = useCallback(
+    (issue: Issue): number => {
+      const sub = children.get(issue.number) ?? [];
+      if (sub.length === 0) return PROGRESS[categoryOf(issue)];
+      return sub.reduce((sum, child) => sum + progress(child), 0) / sub.length;
+    },
+    [children, categoryOf],
+  );
+
+  // 보이는 범위는 그려질 모든 일정과 오늘을 포함하고, 양쪽에 몇일 씩 여유를 둔다.
   const [origin, last] = useMemo(() => {
     const todayNumber = dayNumber(today());
     let min = todayNumber - 14;
     let max = todayNumber + 28;
     for (const issue of issues) {
-      const s = span(issue);
-      if (s) {
-        min = Math.min(min, s[0] - 7);
-        max = Math.max(max, s[1] + 14);
+      const span = issueSpan(issue, visible);
+      if (span) {
+        min = Math.min(min, dayNumber(span[0]) - 7);
+        max = Math.max(max, dayNumber(span[1]) + 14);
       }
     }
     return [min, max];
-  }, [issues]);
+  }, [issues, visible]);
   const totalDays = last - origin + 1;
   const todayOffset = (dayNumber(today()) - origin) * dayWidth;
 
   useEffect(() => {
     if (scroller.current) scroller.current.scrollLeft = Math.max(0, todayOffset - 200);
-    // Only re-center when the zoom level changes or the first data arrives.
+    // 확대 단계가 바뀌거나 처음 데이터가 도착했을 때만 오늘 위치로 다시 맞춘다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoom, issues.length === 0]);
 
-  const category = (issue: Issue): Category => statuses.find((s) => s.id === issue.status)?.category ?? "todo";
-  const statusName = (issue: Issue) => statuses.find((s) => s.id === issue.status)?.name ?? "";
-
-  function begin(event: React.PointerEvent, issue: Issue, mode: Mode) {
-    const s = span(issue);
-    if (!s) return;
+  function begin(event: React.PointerEvent, issue: Issue, date: IssuePhase, mode: Mode) {
     event.preventDefault();
-    const next = { number: issue.number, mode, originX: event.clientX, start: s[0], end: s[1], delta: 0 };
+    event.stopPropagation();
+    const next = {
+      number: issue.number,
+      phase: date.phase,
+      mode,
+      originX: event.clientX,
+      start: dayNumber(date.start_date as string),
+      end: dayNumber(date.end_date as string),
+      delta: 0,
+    };
     dragRef.current = next;
     setDrag(next);
   }
@@ -116,20 +157,12 @@ export default function TimelinePage({ params }: { params: { key: string } }) {
         router.push(`/projects/${key}/issues/${current.number}`);
         return;
       }
-      const issue = issues.find((i) => i.number === current.number);
-      if (!issue) return;
-      const body: Record<string, string | null> = {};
-      const shift = (iso: string | null) => (iso ? fromDayNumber(dayNumber(iso) + current.delta) : null);
-      if (current.mode === "move") {
-        if (issue.start_date) body.start_date = shift(issue.start_date);
-        if (issue.due_date) body.due_date = shift(issue.due_date);
-      } else if (current.mode === "start") {
-        body.start_date = shift(issue.start_date);
-      } else {
-        body.due_date = shift(issue.due_date);
-      }
+      const [start, end] = shifted(current);
       try {
-        await api(`/projects/${key}/issues/${current.number}`, { method: "PATCH", body });
+        await api(`/projects/${key}/issues/${current.number}/phases/${current.phase}`, {
+          method: "PUT",
+          body: { start_date: fromDayNumber(start), end_date: fromDayNumber(end) },
+        });
       } catch (e) {
         setError((e as Error).message);
       }
@@ -142,14 +175,19 @@ export default function TimelinePage({ params }: { params: { key: string } }) {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
-  }, [drag !== null, dayWidth, issues, key, load, router]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [drag !== null, dayWidth, key, load, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Header: month blocks, plus a day number (or a week start) tick row.
+  function shifted(d: Drag): [number, number] {
+    if (d.mode === "move") return [d.start + d.delta, d.end + d.delta];
+    if (d.mode === "start") return [d.start + d.delta, d.end];
+    return [d.start, d.end + d.delta];
+  }
+
+  // 머리글: 월 블록과, 주 시작일(월요일) 눈금 줄.
   const months: { label: string; left: number; width: number }[] = [];
   const mondays: number[] = [];
   for (let d = origin; d <= last; d++) {
-    const iso = fromDayNumber(d);
-    const label = iso.slice(0, 7);
+    const label = fromDayNumber(d).slice(0, 7);
     const left = (d - origin) * dayWidth;
     const lastMonth = months[months.length - 1];
     if (lastMonth && lastMonth.label === label) lastMonth.width += dayWidth;
@@ -157,23 +195,58 @@ export default function TimelinePage({ params }: { params: { key: string } }) {
     if (new Date(d * 86400000).getUTCDay() === 1) mondays.push(d);
   }
 
+  function bars(issue: Issue) {
+    return issue.phases
+      .filter((d) => d.start_date && d.end_date && visible.has(d.phase) && phaseById.has(d.phase))
+      .map((date) => {
+        const phase = phaseById.get(date.phase) as Phase;
+        let a = dayNumber(date.start_date as string);
+        let b = dayNumber(date.end_date as string);
+        if (drag && drag.number === issue.number && drag.phase === date.phase) [a, b] = shifted(drag);
+        const single = a === b && !phase.is_range;
+        const resizable = !single;
+        const classes = `tl-bar${single ? " single" : ""}${date.source === "rollup" ? " rollup" : ""}`;
+        const names = date.assignees.map((id) => members.find((m) => m.id === id)?.name).filter(Boolean).join(", ");
+        const label = `${phase.name}${names ? ` (${names})` : ""}: ${fromDayNumber(a)}${a === b ? "" : ` → ${fromDayNumber(b)}`}${date.source === "rollup" ? " (하위 이슈에서 계산됨)" : ""}`;
+        const style = single
+          ? { left: (a - origin) * dayWidth + dayWidth / 2 - 8, background: phase.color, zIndex: 10 + phase.position }
+          : { left: (a - origin) * dayWidth, width: (b - a + 1) * dayWidth, background: phase.color, zIndex: 10 + phase.position };
+        return (
+          <div key={date.phase} className={classes} style={style} title={label} onPointerDown={(e) => begin(e, issue, date, "move")}>
+            {!single && names && <span className="tl-bar-text">{names}</span>}
+            {resizable && (
+              <>
+                <span className="tl-handle left" onPointerDown={(e) => begin(e, issue, date, "start")} />
+                <span className="tl-handle right" onPointerDown={(e) => begin(e, issue, date, "end")} />
+              </>
+            )}
+          </div>
+        );
+      });
+  }
+
   return (
     <main className="wide">
-      <ProjectTitle projectKey={key} suffix="timeline" />
+      <ProjectTitle projectKey={key} suffix="타임라인" />
+      <PhaseChips phases={phases} visible={visible} onToggle={toggle} />
       <div className="row">
         {Object.keys(ZOOMS).map((name) => (
           <button key={name} className={name === zoom ? "active" : undefined} onClick={() => setZoom(name)}>
             {name}
           </button>
         ))}
-        <button onClick={() => scroller.current && (scroller.current.scrollLeft = Math.max(0, todayOffset - 200))}>Today</button>
+        <button onClick={() => scroller.current && (scroller.current.scrollLeft = Math.max(0, todayOffset - 200))}>오늘</button>
+        <button onClick={() => setCollapsed(new Set())}>모두 펼치기</button>
+        <button onClick={() => setCollapsed(new Set(issues.filter((i) => children.has(i.number)).map((i) => i.number)))}>
+          모두 접기
+        </button>
       </div>
       <ErrorNote message={error} />
 
       <div className="timeline" ref={scroller}>
         <div className="tl-row tl-head" style={{ height: 52 }}>
           <div className="tl-left" style={{ width: LEFT_WIDTH }}>
-            Issue
+            이슈
           </div>
           <div className="tl-track" style={{ width: totalDays * dayWidth }}>
             {months.map((m) => (
@@ -190,57 +263,53 @@ export default function TimelinePage({ params }: { params: { key: string } }) {
           </div>
         </div>
 
-        {issues.map((issue) => {
-          const s = span(issue);
-          const live = drag && drag.number === issue.number ? drag : null;
-          let bar: { left: number; width: number } | null = null;
-          if (s) {
-            let [a, b] = s;
-            if (live?.mode === "move") [a, b] = [a + live.delta, b + live.delta];
-            if (live?.mode === "start") a += live.delta;
-            if (live?.mode === "end") b += live.delta;
-            bar = { left: (a - origin) * dayWidth, width: (b - a + 1) * dayWidth };
-          }
-          const cat = category(issue);
-          const resizable = !!(issue.start_date && issue.due_date);
+        {rows.map(({ issue, depth }) => {
+          const cat = categoryOf(issue);
+          const sub = children.get(issue.number) ?? [];
+          const percent = progress(issue);
           return (
             <div key={issue.number} className="tl-row" style={{ height: ROW_HEIGHT }}>
-              <div className="tl-left" style={{ width: LEFT_WIDTH }}>
+              <div className="tl-left" style={{ width: LEFT_WIDTH, paddingLeft: 10 + depth * 18 }}>
+                {sub.length > 0 ? (
+                  <button
+                    className="tl-toggle"
+                    onClick={() =>
+                      setCollapsed((current) => {
+                        const next = new Set(current);
+                        if (next.has(issue.number)) next.delete(issue.number);
+                        else next.add(issue.number);
+                        return next;
+                      })
+                    }
+                  >
+                    {collapsed.has(issue.number) ? "▶" : "▼"}
+                  </button>
+                ) : (
+                  <span className="tl-toggle" />
+                )}
                 <Link href={`/projects/${key}/issues/${issue.number}`} className="tl-title">
                   <span className="muted">{issue.ref}</span> {issue.title}
                 </Link>
-                <span className={`tl-status ${cat}`}>{statusName(issue)}</span>
-                <span className="tl-progress" title={cat}>
-                  <span className={cat} style={{ width: `${PROGRESS[cat]}%` }} />
+                <span className={`tl-status ${cat}`}>{statuses.find((s) => s.id === issue.status)?.name}</span>
+                <span className="tl-progress" title={`${Math.round(percent)}%`}>
+                  <span className={percent >= 100 ? "done" : "doing"} style={{ width: `${percent}%` }} />
                 </span>
               </div>
-              <div className="tl-track" style={{ width: totalDays * dayWidth }}>
+              <div className={isOverdue(issue, statuses) ? "tl-track late" : "tl-track"} style={{ width: totalDays * dayWidth }}>
                 {mondays.map((d) => (
                   <div key={d} className="tl-grid" style={{ left: (d - origin) * dayWidth }} />
                 ))}
                 <div className="tl-today" style={{ left: todayOffset + dayWidth / 2 }} />
-                {bar && (
-                  <div
-                    className={`tl-bar ${cat}${isOverdue(issue, statuses) ? " late" : ""}`}
-                    style={{ left: bar.left, width: bar.width }}
-                    title={`${issue.ref} ${issue.title}`}
-                    onPointerDown={(e) => begin(e, issue, "move")}
-                  >
-                    {resizable && (
-                      <>
-                        <span className="tl-handle left" onPointerDown={(e) => { e.stopPropagation(); begin(e, issue, "start"); }} />
-                        <span className="tl-handle right" onPointerDown={(e) => { e.stopPropagation(); begin(e, issue, "end"); }} />
-                      </>
-                    )}
-                  </div>
-                )}
+                {bars(issue)}
               </div>
             </div>
           );
         })}
-        {issues.length === 0 && <p className="muted">No issues.</p>}
+        {issues.length === 0 && <p className="muted">이슈가 없습니다.</p>}
       </div>
-      <p className="muted">Drag a bar to move it, drag its ends to change the start or due date.</p>
+      <p className="muted">
+        한 줄에 위에서 켜 둔 단계들의 일정이 겹쳐서 표시됩니다. 막대를 끌면 옮길 수 있고, 양쪽 끝을 끌면 기간을 늘이거나 줄일 수 있습니다. 상위 이슈는 직접 정하기 전까지 하위 이슈의 일정을 따라갑니다.
+      </p>
     </main>
   );
 }

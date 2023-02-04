@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { Project } from "../lib/types";
 
-// The main screen is the timeline of a project; the first project is opened by default.
+/** 메인 화면은 프로젝트의 타임라인이다. 첫 번째 프로젝트를 기본으로 연다. */
 export default function Home() {
   const router = useRouter();
   const [empty, setEmpty] = useState(false);
@@ -25,7 +25,7 @@ export default function Home() {
       {empty && (
         <>
           <h1>Soonish</h1>
-          <p className="muted">Create your first project from the menu on the left.</p>
+          <p className="muted">왼쪽 메뉴에서 첫 프로젝트를 만들어 주세요.</p>
         </>
       )}
     </main>
