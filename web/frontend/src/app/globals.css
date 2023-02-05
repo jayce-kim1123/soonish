@@ -315,26 +315,31 @@ main.wide {
 
 .tl-bar {
   position: absolute;
-  top: 9px;
-  height: 18px;
-  min-width: 6px;
+  top: 10px;
+  height: 4px;
+  min-width: 3px;
   box-sizing: border-box;
-  border-radius: 4px;
-  opacity: 0.8;
+  border-radius: 2px;
+  opacity: 0.85;
   cursor: grab;
   touch-action: none;
   user-select: none;
 }
 
+/* 선이 얇아서 잡기 어려우니 위아래로 눈에 안 보이는 영역을 넓힌다. 이웃 선과 겹치지 않을 만큼만 넓힌다. */
+.tl-bar::after {
+  position: absolute;
+  inset: -1px 0;
+  content: "";
+}
+
 .tl-bar.rollup {
-  opacity: 0.5;
-  outline: 1px dashed #fffa;
+  opacity: 0.55;
 }
 
 .tl-bar.single {
-  top: 10px;
-  width: 16px;
-  height: 16px;
+  width: 8px;
+  height: 8px;
   min-width: 0;
   border-radius: 2px;
   transform: rotate(45deg) scale(0.8);
@@ -522,17 +527,6 @@ button.active {
 .inline-form input {
   font: inherit;
   font-weight: inherit;
-}
-
-.tl-bar-text {
-  display: block;
-  padding: 0 6px;
-  overflow: hidden;
-  font-size: 0.7rem;
-  line-height: 18px;
-  color: #fff;
-  white-space: nowrap;
-  pointer-events: none;
 }
 
 .assignee {

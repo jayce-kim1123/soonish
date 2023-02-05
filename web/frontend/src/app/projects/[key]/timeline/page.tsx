@@ -9,7 +9,7 @@ import PhaseChips from "../../../../components/PhaseChips";
 import ProjectTitle from "../../../../components/ProjectTitle";
 import { api } from "../../../../lib/api";
 import { dayNumber, fromDayNumber, isOverdue, issueSpan, today } from "../../../../lib/dates";
-import { Category, Issue, IssuePhase, Member, Phase, Status } from "../../../../lib/types";
+import { Category, Issue, IssuePhase, Phase, Status } from "../../../../lib/types";
 import { usePhases } from "../../../../lib/usePhases";
 
 const ROW_HEIGHT = 36;
@@ -35,7 +35,6 @@ export default function TimelinePage({ params }: { params: { key: string } }) {
   const { phases, visible, toggle } = usePhases();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [zoom, setZoom] = useState("주");
   const [error, setError] = useState<string | null>(null);
@@ -47,12 +46,10 @@ export default function TimelinePage({ params }: { params: { key: string } }) {
     Promise.all([
       api<Issue[]>(`/projects/${key}/issues?ordering=number`),
       api<Status[]>(`/projects/${key}/statuses`),
-      api<Member[]>("/members"),
     ])
-      .then(([i, s, m]) => {
+      .then(([i, s]) => {
         setIssues(i);
         setStatuses(s);
-        setMembers(m);
         setError(null);
       })
       .catch((e) => setError(e.message));
@@ -206,14 +203,14 @@ export default function TimelinePage({ params }: { params: { key: string } }) {
         const single = a === b && !phase.is_range;
         const resizable = !single;
         const classes = `tl-bar${single ? " single" : ""}${date.source === "rollup" ? " rollup" : ""}`;
-        const names = date.assignees.map((id) => members.find((m) => m.id === id)?.name).filter(Boolean).join(", ");
-        const label = `${phase.name}${names ? ` (${names})` : ""}: ${fromDayNumber(a)}${a === b ? "" : ` → ${fromDayNumber(b)}`}${date.source === "rollup" ? " (하위 이슈에서 계산됨)" : ""}`;
+        const label = `${phase.name}: ${fromDayNumber(a)}${a === b ? "" : ` → ${fromDayNumber(b)}`}${date.source === "rollup" ? " (하위 이슈에서 계산됨)" : ""}`;
+        // 단계마다 선 하나씩 6px 간격으로 아래로 밀어서, 선끼리 닿지 않고 2px씩 떨어지게 한다.
+        const top = 4 + Math.max(0, phases.findIndex((p) => p.id === phase.id)) * 6;
         const style = single
-          ? { left: (a - origin) * dayWidth + dayWidth / 2 - 8, background: phase.color, zIndex: 10 + phase.position }
-          : { left: (a - origin) * dayWidth, width: (b - a + 1) * dayWidth, background: phase.color, zIndex: 10 + phase.position };
+          ? { top, left: (a - origin) * dayWidth + dayWidth / 2 - 4, background: phase.color, zIndex: 10 + phase.position }
+          : { top, left: (a - origin) * dayWidth, width: (b - a + 1) * dayWidth, background: phase.color, zIndex: 10 + phase.position };
         return (
           <div key={date.phase} className={classes} style={style} title={label} onPointerDown={(e) => begin(e, issue, date, "move")}>
-            {!single && names && <span className="tl-bar-text">{names}</span>}
             {resizable && (
               <>
                 <span className="tl-handle left" onPointerDown={(e) => begin(e, issue, date, "start")} />
