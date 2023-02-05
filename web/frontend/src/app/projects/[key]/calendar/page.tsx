@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import ErrorNote from "../../../../components/ErrorNote";
 import PhaseChips from "../../../../components/PhaseChips";
+import ProjectNav from "../../../../components/ProjectNav";
 import ProjectTitle from "../../../../components/ProjectTitle";
 import { api } from "../../../../lib/api";
 import { isOverdue, pad, toIso } from "../../../../lib/dates";
@@ -60,6 +61,7 @@ export default function CalendarPage({ params }: { params: { key: string } }) {
 
   return (
     <main className="wide">
+      <ProjectNav projectKey={key} />
       <ProjectTitle projectKey={key} suffix={`캘린더 · ${year}년 ${month + 1}월`} />
       <PhaseChips phases={phases} visible={visible} onToggle={toggle} />
       <div className="row">

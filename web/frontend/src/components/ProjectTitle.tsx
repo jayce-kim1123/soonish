@@ -13,9 +13,20 @@ import { PROJECTS_CHANGED } from "./Sidebar";
  * 키는 고정이고, 이름을 누르면 그 자리에서 바로 고칠 수 있다.
  *
  * @param projectKey 프로젝트 키.
- * @param suffix 이름 뒤에 붙일 화면 이름 (예: 타임라인).
+ * @param suffix 이름 뒤에 붙일 화면 이름 (예: 캘린더).
+ * @param tag 제목 태그. 한 화면에 프로젝트가 여러 개일 때는 h2 를 쓴다.
  */
-export default function ProjectTitle({ projectKey, suffix, children }: { projectKey: string; suffix?: string; children?: ReactNode }) {
+export default function ProjectTitle({
+  projectKey,
+  suffix,
+  tag: Tag = "h1",
+  children,
+}: {
+  projectKey: string;
+  suffix?: string;
+  tag?: "h1" | "h2";
+  children?: ReactNode;
+}) {
   const [project, setProject] = useState<Project | null>(null);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
@@ -52,7 +63,7 @@ export default function ProjectTitle({ projectKey, suffix, children }: { project
 
   return (
     <>
-      <h1 className="project-title">
+      <Tag className="project-title">
         <span title="키는 바꿀 수 없습니다">{projectKey}</span>
         <span className="muted"> · </span>
         {editing ? (
@@ -74,7 +85,7 @@ export default function ProjectTitle({ projectKey, suffix, children }: { project
         )}
         {suffix && <span className="muted"> {suffix}</span>}
         {children}
-      </h1>
+      </Tag>
       <ErrorNote message={error} />
     </>
   );

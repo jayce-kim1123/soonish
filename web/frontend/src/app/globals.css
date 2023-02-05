@@ -275,8 +275,10 @@ main.wide {
   background: #4a90e2;
 }
 
+/* z-index 를 줘서 막대들의 z-index 가 트랙 안에 갇히게 한다. 안 그러면 가로로 스크롤할 때 막대가 왼쪽 고정 칸 위로 비쳐 보인다. */
 .tl-track {
   position: relative;
+  z-index: 0;
   flex: none;
 }
 
@@ -543,4 +545,65 @@ button.active {
 .assignee button {
   padding: 0 4px;
   border: none;
+}
+
+/* 프로젝트 머리글: 이슈 행과 구분되도록 진한 배경과 위아래 선을 주고, 드롭다운처럼 누르면 접힌다. */
+.tl-section {
+  cursor: pointer;
+  background: #8882;
+  border-top: 2px solid #8885;
+  border-bottom: 1px solid #8885;
+}
+
+.tl-section:hover {
+  background: #8883;
+}
+
+.tl-section .tl-left {
+  gap: 10px;
+  background: #2a2a2e;
+}
+
+.tl-section .project-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.tl-section h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.tl-chevron {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  font-size: 0.9rem;
+  line-height: 22px;
+  text-align: center;
+  background: #8884;
+  border-radius: 4px;
+}
+
+.tl-count {
+  flex: none;
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  background: #8884;
+  border-radius: 999px;
+}
+
+.tl-section-links {
+  position: sticky;
+  z-index: 4;
+  display: inline-flex;
+  gap: 14px;
+  align-items: center;
+  height: 100%;
+  font-size: 0.8rem;
+}
+
+.empty {
+  padding: 16px;
 }

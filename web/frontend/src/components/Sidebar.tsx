@@ -2,37 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 
 import { api } from "../lib/api";
-import { Project } from "../lib/types";
 
-/** 프로젝트 목록이 바뀐 화면은 이 이벤트로 사이드바에 알린다. */
+/** 프로젝트 목록이 바뀌면 화면들이 다시 불러오도록 알리는 이벤트 이름. */
 export const PROJECTS_CHANGED = "projects-changed";
 
-const VIEWS = [
-  ["timeline", "타임라인"],
-  ["calendar", "캘린더"],
-  ["", "이슈 목록"],
-];
-
+/** 왼쪽 메뉴. 프로젝트는 타임라인 화면에 섹션으로 나오므로 여기에는 나열하지 않는다. */
 export default function Sidebar() {
   const pathname = usePathname() ?? "/";
-  const [projects, setProjects] = useState<Project[]>([]);
   const [adding, setAdding] = useState(false);
   const [key, setKey] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(() => {
-    api<Project[]>("/projects").then(setProjects).catch(() => setProjects([]));
-  }, []);
-
-  useEffect(() => {
-    load();
-    window.addEventListener(PROJECTS_CHANGED, load);
-    return () => window.removeEventListener(PROJECTS_CHANGED, load);
-  }, [load]);
 
   async function create(event: FormEvent) {
     event.preventDefault();
@@ -42,48 +25,20 @@ export default function Sidebar() {
       setName("");
       setAdding(false);
       setError(null);
-      load();
+      window.dispatchEvent(new Event(PROJECTS_CHANGED));
     } catch (e) {
       setError((e as Error).message);
     }
   }
-
-  const activeKey = pathname.startsWith("/projects/") ? pathname.split("/")[2] : null;
-  const activeView = pathname.split("/")[3] ?? "";
 
   return (
     <nav className="sidebar">
       <Link href="/" className="brand">
         Soonish
       </Link>
-      <div className="side-title">프로젝트</div>
-      <ul>
-        {projects.map((project) => (
-          <li key={project.key}>
-            <Link
-              href={`/projects/${project.key}/timeline`}
-              className={project.key === activeKey ? "side-link active" : "side-link"}
-            >
-              <strong>{project.key}</strong> {project.name}
-            </Link>
-            {project.key === activeKey && (
-              <ul className="side-sub">
-                {VIEWS.map(([path, label]) => (
-                  <li key={label}>
-                    <Link
-                      href={`/projects/${project.key}${path ? `/${path}` : ""}`}
-                      className={path === activeView || (path === "" && activeView === "issues") ? "side-link active" : "side-link"}
-                    >
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </li>
-        ))}
-        {projects.length === 0 && <li className="muted side-empty">아직 프로젝트가 없습니다.</li>}
-      </ul>
+      <Link href="/" className={pathname === "/" ? "side-link active" : "side-link"}>
+        타임라인
+      </Link>
       <div className="side-title side-settings">설정</div>
       <Link href="/settings/phases" className={pathname.startsWith("/settings/phases") ? "side-link active" : "side-link"}>
         단계 관리

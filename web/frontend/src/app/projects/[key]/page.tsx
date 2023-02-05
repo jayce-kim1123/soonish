@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import ErrorNote from "../../../components/ErrorNote";
+import ProjectNav from "../../../components/ProjectNav";
 import ProjectTitle from "../../../components/ProjectTitle";
 import { PROJECTS_CHANGED } from "../../../components/Sidebar";
 import StatusPanel from "../../../components/StatusPanel";
@@ -96,6 +97,7 @@ export default function ProjectPage({ params }: { params: { key: string } }) {
 
   return (
     <main>
+      <ProjectNav projectKey={key} />
       <ProjectTitle projectKey={key}>
         <button className="link danger" onClick={removeProject}>
           프로젝트 삭제

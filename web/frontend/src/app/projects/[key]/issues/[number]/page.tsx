@@ -77,7 +77,7 @@ export default function IssuePage({ params }: { params: { key: string; number: s
     const sub = issues.filter((i) => i.parent === issue?.number).length;
     if (!confirm(`이슈 ${issue?.ref}${sub ? "와 모든 하위 이슈를" : "를"} 삭제할까요?`)) return;
     await api(base, { method: "DELETE" });
-    router.push(`/projects/${key}/timeline`);
+    router.push("/");
   }
 
   /**
@@ -125,7 +125,7 @@ export default function IssuePage({ params }: { params: { key: string; number: s
   return (
     <main>
       <p>
-        <Link href={`/projects/${key}/timeline`}>{key} 타임라인으로</Link>
+        <Link href="/">타임라인으로</Link>
         {issue.parent && (
           <>
             {" · "}
