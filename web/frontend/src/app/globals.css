@@ -717,3 +717,25 @@ button.active {
   margin-top: 20px;
   margin-bottom: 0;
 }
+
+.tl-ref {
+  flex: none;
+  font-size: 0.8rem;
+  text-decoration: none;
+  opacity: 0.55;
+}
+
+.tl-ref:hover {
+  text-decoration: underline;
+}
+
+.tl-title {
+  cursor: text;
+}
+
+.tl-title-input {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  font-size: 0.85rem;
+}

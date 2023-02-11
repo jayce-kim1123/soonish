@@ -57,6 +57,8 @@ export default function TimelinePage() {
   const [error, setError] = useState<string | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [phaseModal, setPhaseModal] = useState<{ board: Board; issue: Issue; phase: Phase } | null>(null);
+  const [editing, setEditing] = useState<{ ref: string; value: string } | null>(null);
+  const editingRef = useRef(false);
   const [menu, setMenu] = useState<{ x: number; y: number; board: Board; issue: Issue } | null>(null);
   const dragRef = useRef<Drag | null>(null);
   const dayWidth = ZOOMS[zoom];
@@ -242,6 +244,31 @@ export default function TimelinePage() {
     if (new Date(d * 86400000).getUTCDay() === 1) mondays.push(d);
   }
 
+  const startTitle = (issue: Issue) => {
+    editingRef.current = true;
+    setEditing({ ref: issue.ref, value: issue.title });
+  };
+
+  const cancelTitle = () => {
+    editingRef.current = false;
+    setEditing(null);
+  };
+
+  /** 제목 입력을 마친다. 비었거나 그대로면 저장하지 않는다. Enter 와 blur 가 연달아 와도 한 번만 처리한다. */
+  async function commitTitle(board: Board, issue: Issue) {
+    if (!editingRef.current || !editing) return;
+    editingRef.current = false;
+    const title = editing.value.trim();
+    setEditing(null);
+    if (!title || title === issue.title) return;
+    try {
+      await api(`/projects/${board.project.key}/issues/${issue.number}`, { method: "PATCH", body: { title } });
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    load();
+  }
+
   const closeMenu = useCallback(() => setMenu(null), []);
 
   function toggleIn(setter: React.Dispatch<React.SetStateAction<Set<string>>>, id: string) {
@@ -405,9 +432,28 @@ export default function TimelinePage() {
                 ) : (
                   <span className="tl-toggle" />
                 )}
-                <Link href={`/projects/${board.project.key}/issues/${issue.number}`} className="tl-title">
-                  <span className="muted">{issue.ref}</span> {issue.title}
+                <Link href={`/projects/${board.project.key}/issues/${issue.number}`} className="tl-ref" title="이슈 열기">
+                  {issue.ref}
                 </Link>
+                {editing?.ref === issue.ref ? (
+                  <input
+                    className="tl-title-input"
+                    value={editing.value}
+                    autoFocus
+                    maxLength={200}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setEditing({ ref: issue.ref, value: e.target.value })}
+                    onBlur={() => commitTitle(board, issue)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitTitle(board, issue);
+                      if (e.key === "Escape") cancelTitle();
+                    }}
+                  />
+                ) : (
+                  <span className="tl-title" title="눌러서 제목 변경" onClick={() => startTitle(issue)}>
+                    {issue.title}
+                  </span>
+                )}
                 <span className={`tl-status ${cat}`}>{board.statuses.find((s) => s.id === issue.status)?.name}</span>
                 <span className="tl-progress" title={`${Math.round(percent)}%`}>
                   <span className={percent >= 100 ? "done" : "doing"} style={{ width: `${percent}%` }} />
