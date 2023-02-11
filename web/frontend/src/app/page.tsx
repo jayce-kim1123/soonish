@@ -455,9 +455,11 @@ export default function TimelinePage() {
                   </span>
                 )}
                 <span className={`tl-status ${cat}`}>{board.statuses.find((s) => s.id === issue.status)?.name}</span>
-                <span className="tl-progress" title={`${Math.round(percent)}%`}>
-                  <span className={percent >= 100 ? "done" : "doing"} style={{ width: `${percent}%` }} />
-                </span>
+                {sub.length > 0 && (
+                  <span className="tl-progress" title={`${Math.round(percent)}%`}>
+                    <span className={percent >= 100 ? "done" : "doing"} style={{ width: `${percent}%` }} />
+                  </span>
+                )}
               </div>
               <div className={isOverdue(issue, board.statuses) ? "tl-track late" : "tl-track"} style={{ width: totalDays * dayWidth }}>
                 {gridLines}
