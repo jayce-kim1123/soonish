@@ -663,3 +663,57 @@ button.active {
   font-size: 0.8rem;
   border-top: 1px solid #8884;
 }
+
+/* 일정·담당자를 고르는 모달 */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0009;
+}
+
+.modal {
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  padding: 20px;
+  background: #1f1f23;
+  border: 1px solid #8886;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px #000a;
+}
+
+.modal h3 {
+  margin: 0 0 4px;
+}
+
+.modal-field {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.modal-field > span:first-child {
+  flex: none;
+  width: 56px;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.modal-assignees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.modal-assignees .ctx-item {
+  cursor: pointer;
+}
+
+.modal-actions {
+  margin-top: 20px;
+  margin-bottom: 0;
+}

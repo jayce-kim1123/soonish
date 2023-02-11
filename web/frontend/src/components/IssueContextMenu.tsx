@@ -28,6 +28,7 @@ import {
  * @param phases 전체 단계 목록.
  * @param onClose 메뉴를 닫을 때 부르는 함수.
  * @param onChanged 이슈가 바뀐 뒤 화면을 다시 불러오는 함수.
+ * @param onPhase 단계 칩을 눌렀을 때 부르는 함수. 일정과 담당자를 고르는 모달은 부른 쪽에서 띄운다.
  */
 export default function IssueContextMenu({
   x,
@@ -38,6 +39,7 @@ export default function IssueContextMenu({
   phases,
   onClose,
   onChanged,
+  onPhase,
 }: {
   x: number;
   y: number;
@@ -47,6 +49,7 @@ export default function IssueContextMenu({
   phases: Phase[];
   onClose: () => void;
   onChanged: () => void;
+  onPhase: (phase: Phase) => void;
 }) {
   const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
@@ -83,9 +86,6 @@ export default function IssueContextMenu({
   const patch = (body: Record<string, unknown>) => run(() => api(base, { method: "PATCH", body }));
 
   const chosen = (phase: Phase) => issue.phases.find((p) => p.phase === phase.id)?.selected ?? false;
-
-  const togglePhase = (phase: Phase) =>
-    run(() => api(`${base}/phases/${phase.id}`, chosen(phase) ? { method: "DELETE" } : { method: "PUT", body: {} }));
 
   function addSub() {
     const title = prompt("새 하위 이슈 제목");
@@ -131,9 +131,9 @@ export default function IssueContextMenu({
         ))}
       </div>
       <div className="ctx-group">
-        <span className="ctx-label">단계</span>
+        <span className="ctx-label" title="누르면 일정과 담당자를 고르는 창이 열립니다">단계</span>
         {phases.map((phase) => (
-          <button key={phase.id} className={chosen(phase) ? "ctx-item on" : "ctx-item"} onClick={() => togglePhase(phase)}>
+          <button key={phase.id} className={chosen(phase) ? "ctx-item on" : "ctx-item"} onClick={() => onPhase(phase)}>
             <span className="dot" style={{ background: phase.color }} /> {phase.name}
           </button>
         ))}

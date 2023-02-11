@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ErrorNote from "../components/ErrorNote";
 import IssueContextMenu from "../components/IssueContextMenu";
 import PhaseChips from "../components/PhaseChips";
+import PhaseModal from "../components/PhaseModal";
 import ProjectTitle from "../components/ProjectTitle";
 import { PROJECTS_CHANGED } from "../components/Sidebar";
 import { api } from "../lib/api";
@@ -55,6 +56,7 @@ export default function TimelinePage() {
   const [zoom, setZoom] = useState("주");
   const [error, setError] = useState<string | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [phaseModal, setPhaseModal] = useState<{ board: Board; issue: Issue; phase: Phase } | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number; board: Board; issue: Issue } | null>(null);
   const dragRef = useRef<Drag | null>(null);
   const dayWidth = ZOOMS[zoom];
@@ -433,6 +435,19 @@ export default function TimelinePage() {
           phases={phases}
           onClose={closeMenu}
           onChanged={load}
+          onPhase={(phase) => {
+            setPhaseModal({ board: menu.board, issue: menu.issue, phase });
+            setMenu(null);
+          }}
+        />
+      )}
+      {phaseModal && (
+        <PhaseModal
+          projectKey={phaseModal.board.project.key}
+          issue={phaseModal.issue}
+          phase={phaseModal.phase}
+          onClose={() => setPhaseModal(null)}
+          onSaved={load}
         />
       )}
     </main>
