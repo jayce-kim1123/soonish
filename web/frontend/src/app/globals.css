@@ -607,3 +607,59 @@ button.active {
 .empty {
   padding: 16px;
 }
+
+/* 이슈를 오른쪽 마우스로 눌렀을 때 뜨는 메뉴 */
+.ctx-menu {
+  position: fixed;
+  z-index: 100;
+  width: 360px;
+  padding: 10px;
+  background: #1f1f23;
+  border: 1px solid #8886;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px #0008;
+}
+
+.ctx-title {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  overflow: hidden;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid #8884;
+}
+
+.ctx-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin: 6px 0;
+}
+
+.ctx-label {
+  width: 56px;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.ctx-item {
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  border-radius: 999px;
+}
+
+.ctx-item.on {
+  background: #4a90e244;
+  border-color: #4a90e2;
+}
+
+.ctx-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+  font-size: 0.8rem;
+  border-top: 1px solid #8884;
+}

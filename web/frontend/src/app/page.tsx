@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import ErrorNote from "../components/ErrorNote";
+import IssueContextMenu from "../components/IssueContextMenu";
 import PhaseChips from "../components/PhaseChips";
 import ProjectTitle from "../components/ProjectTitle";
 import { PROJECTS_CHANGED } from "../components/Sidebar";
@@ -54,6 +55,7 @@ export default function TimelinePage() {
   const [zoom, setZoom] = useState("주");
   const [error, setError] = useState<string | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number; board: Board; issue: Issue } | null>(null);
   const dragRef = useRef<Drag | null>(null);
   const dayWidth = ZOOMS[zoom];
 
@@ -159,6 +161,8 @@ export default function TimelinePage() {
   }, [zoom, loaded]);
 
   function begin(event: React.PointerEvent, projectKey: string, issue: Issue, item: IssuePhase, mode: Mode) {
+    // 오른쪽 버튼은 끌기가 아니라 컨텍스트 메뉴용이다.
+    if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
     const next = {
@@ -235,6 +239,8 @@ export default function TimelinePage() {
     else months.push({ label, left, width: dayWidth });
     if (new Date(d * 86400000).getUTCDay() === 1) mondays.push(d);
   }
+
+  const closeMenu = useCallback(() => setMenu(null), []);
 
   function toggleIn(setter: React.Dispatch<React.SetStateAction<Set<string>>>, id: string) {
     setter((current) => {
@@ -380,7 +386,15 @@ export default function TimelinePage() {
           const sub = childrenOf.get(board.project.key)?.get(issue.number) ?? [];
           const percent = progress(board, issue);
           return (
-            <div key={issue.ref} className="tl-row" style={{ height: ROW_HEIGHT }}>
+            <div
+              key={issue.ref}
+              className="tl-row"
+              style={{ height: ROW_HEIGHT }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setMenu({ x: e.clientX, y: e.clientY, board, issue });
+              }}
+            >
               <div className="tl-left" style={{ width: LEFT_WIDTH, paddingLeft: 10 + depth * 18 }}>
                 {sub.length > 0 ? (
                   <button className="tl-toggle" onClick={() => toggleIn(setCollapsedIssues, issue.ref)}>
@@ -409,6 +423,18 @@ export default function TimelinePage() {
           <p className="muted empty">아직 프로젝트가 없습니다. 왼쪽 아래의 &quot;+ 새 프로젝트&quot;로 첫 프로젝트를 만들어 주세요.</p>
         )}
       </div>
+      {menu && (
+        <IssueContextMenu
+          x={menu.x}
+          y={menu.y}
+          projectKey={menu.board.project.key}
+          issue={menu.issue}
+          statuses={menu.board.statuses}
+          phases={phases}
+          onClose={closeMenu}
+          onChanged={load}
+        />
+      )}
     </main>
   );
 }
