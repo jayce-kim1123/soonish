@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import ErrorNote from "../components/ErrorNote";
 import IssueContextMenu from "../components/IssueContextMenu";
+import IssueDrawer from "../components/IssueDrawer";
 import PhaseChips from "../components/PhaseChips";
 import PhaseModal from "../components/PhaseModal";
 import ProjectTitle from "../components/ProjectTitle";
@@ -46,7 +46,6 @@ type Row = { type: "section"; board: Board } | { type: "issue"; board: Board; is
 
 /** 메인 화면. 모든 프로젝트를 섹션으로 나눠서 하나의 타임라인에 보여 준다. */
 export default function TimelinePage() {
-  const router = useRouter();
   const scroller = useRef<HTMLDivElement>(null);
   const { phases, visible, toggle } = usePhases();
   const [boards, setBoards] = useState<Board[]>([]);
@@ -59,6 +58,7 @@ export default function TimelinePage() {
   const [phaseModal, setPhaseModal] = useState<{ board: Board; issue: Issue; phase: Phase } | null>(null);
   const [editing, setEditing] = useState<{ ref: string; value: string } | null>(null);
   const editingRef = useRef(false);
+  const [drawer, setDrawer] = useState<{ projectKey: string; number: number } | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number; board: Board; issue: Issue } | null>(null);
   const dragRef = useRef<Drag | null>(null);
   const dayWidth = ZOOMS[zoom];
@@ -209,7 +209,7 @@ export default function TimelinePage() {
       setDrag(null);
       if (!current) return;
       if (current.delta === 0) {
-        router.push(`/projects/${current.projectKey}/issues/${current.number}`);
+        setDrawer({ projectKey: current.projectKey, number: current.number });
         return;
       }
       const [start, end] = shifted(current);
@@ -230,7 +230,7 @@ export default function TimelinePage() {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
-  }, [drag !== null, dayWidth, load, router]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [drag !== null, dayWidth, load]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 머리글: 월 블록과, 주 시작일(월요일) 눈금 줄.
   const months: { label: string; left: number; width: number }[] = [];
@@ -432,9 +432,9 @@ export default function TimelinePage() {
                 ) : (
                   <span className="tl-toggle" />
                 )}
-                <Link href={`/projects/${board.project.key}/issues/${issue.number}`} className="tl-ref" title="이슈 열기">
+                <button className="tl-ref" title="이슈 열기" onClick={() => setDrawer({ projectKey: board.project.key, number: issue.number })}>
                   {issue.ref}
-                </Link>
+                </button>
                 {editing?.ref === issue.ref ? (
                   <input
                     className="tl-title-input"
@@ -483,11 +483,15 @@ export default function TimelinePage() {
           phases={phases}
           onClose={closeMenu}
           onChanged={load}
+          onOpen={() => setDrawer({ projectKey: menu.board.project.key, number: menu.issue.number })}
           onPhase={(phase) => {
             setPhaseModal({ board: menu.board, issue: menu.issue, phase });
             setMenu(null);
           }}
         />
+      )}
+      {drawer && (
+        <IssueDrawer projectKey={drawer.projectKey} number={drawer.number} onClose={() => setDrawer(null)} onChanged={load} />
       )}
       {phaseModal && (
         <PhaseModal

@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { api } from "../lib/api";
@@ -28,6 +27,7 @@ import {
  * @param phases 전체 단계 목록.
  * @param onClose 메뉴를 닫을 때 부르는 함수.
  * @param onChanged 이슈가 바뀐 뒤 화면을 다시 불러오는 함수.
+ * @param onOpen 이슈 열기를 눌렀을 때 부르는 함수 (이슈 드로워를 연다).
  * @param onPhase 단계 칩을 눌렀을 때 부르는 함수. 일정과 담당자를 고르는 모달은 부른 쪽에서 띄운다.
  */
 export default function IssueContextMenu({
@@ -39,6 +39,7 @@ export default function IssueContextMenu({
   phases,
   onClose,
   onChanged,
+  onOpen,
   onPhase,
 }: {
   x: number;
@@ -49,9 +50,9 @@ export default function IssueContextMenu({
   phases: Phase[];
   onClose: () => void;
   onChanged: () => void;
+  onOpen: () => void;
   onPhase: (phase: Phase) => void;
 }) {
-  const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const base = `/projects/${projectKey}/issues/${issue.number}`;
@@ -139,7 +140,10 @@ export default function IssueContextMenu({
         ))}
       </div>
       <div className="ctx-actions">
-        <button className="link" onClick={() => router.push(base)}>
+        <button className="link" onClick={() => {
+            onOpen();
+            onClose();
+          }}>
           이슈 열기
         </button>
         <button className="link" onClick={addSub}>
