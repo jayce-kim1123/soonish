@@ -8,6 +8,7 @@ import IssueContextMenu from "../components/IssueContextMenu";
 import IssueDrawer from "../components/IssueDrawer";
 import PhaseChips from "../components/PhaseChips";
 import PhaseModal from "../components/PhaseModal";
+import ProjectSettingsModal from "../components/ProjectSettingsModal";
 import ProjectTitle from "../components/ProjectTitle";
 import { PROJECTS_CHANGED } from "../components/Sidebar";
 import { api } from "../lib/api";
@@ -58,6 +59,7 @@ export default function TimelinePage() {
   const [phaseModal, setPhaseModal] = useState<{ board: Board; issue: Issue; phase: Phase } | null>(null);
   const [editing, setEditing] = useState<{ ref: string; value: string } | null>(null);
   const editingRef = useRef(false);
+  const [settings, setSettings] = useState<Project | null>(null);
   const [drawer, setDrawer] = useState<{ projectKey: string; number: number } | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number; board: Board; issue: Issue } | null>(null);
   const dragRef = useRef<Drag | null>(null);
@@ -280,12 +282,6 @@ export default function TimelinePage() {
     });
   }
 
-  async function removeProject(project: Project) {
-    if (!confirm(`${project.key} 프로젝트와 안에 있는 모든 이슈를 삭제할까요?`)) return;
-    await api(`/projects/${project.key}`, { method: "DELETE" });
-    load();
-  }
-
   /** 한 이슈의 단계 선들을 그린다. 단계마다 선 하나이고, 선끼리 닿지 않게 6px 씩 아래로 민다. */
   function lines(board: Board, issue: Issue, allPhases: Phase[]) {
     return issue.phases
@@ -395,14 +391,13 @@ export default function TimelinePage() {
                 <div className="tl-left" style={{ width: LEFT_WIDTH }}>
                   <span className="tl-chevron">{closed ? "▸" : "▾"}</span>
                   <ProjectTitle projectKey={project.key} tag="h2" />
-                  <span className="tl-count">{row.board.issues.length}</span>
+                  <button className="tl-gear" title="프로젝트 설정" onClick={() => setSettings(project)}>
+                    ⚙
+                  </button>
                 </div>
                 <div className="tl-track" style={{ width: totalDays * dayWidth }}>
                   <span className="tl-section-links" style={{ left: LEFT_WIDTH + 12 }}>
                     <Link href={`/projects/${project.key}`}>이슈 목록</Link>
-                    <button className="link" onClick={() => removeProject(project)}>
-                      프로젝트 삭제
-                    </button>
                   </span>
                 </div>
               </div>
@@ -488,6 +483,7 @@ export default function TimelinePage() {
           }}
         />
       )}
+      {settings && <ProjectSettingsModal project={settings} onClose={() => setSettings(null)} onDeleted={load} />}
       {drawer && (
         <IssueDrawer projectKey={drawer.projectKey} number={drawer.number} onClose={() => setDrawer(null)} onChanged={load} />
       )}

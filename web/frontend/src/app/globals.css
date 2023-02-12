@@ -594,12 +594,18 @@ button.active {
   border-radius: 4px;
 }
 
-.tl-count {
+.tl-gear {
   flex: none;
-  padding: 1px 8px;
-  font-size: 0.7rem;
-  background: #8884;
-  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 1rem;
+  line-height: 1.2;
+  border: none;
+  opacity: 0.7;
+}
+
+.tl-gear:hover {
+  opacity: 1;
+  background: #8883;
 }
 
 .tl-section-links {
@@ -813,4 +819,17 @@ button.active {
 .drawer-resize:hover::after,
 .drawer-resize.active::after {
   background: #4a90e2;
+}
+
+/* 프로젝트 설정 모달의 삭제 영역 */
+.danger-zone {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #d3333388;
+  border-radius: 8px;
+}
+
+.danger-zone p {
+  margin: 6px 0 10px;
+  font-size: 0.85rem;
 }
