@@ -39,6 +39,9 @@ export default function Sidebar() {
       <Link href="/" className={pathname === "/" ? "side-link active" : "side-link"}>
         타임라인
       </Link>
+      <Link href="/calendar" className={pathname.startsWith("/calendar") ? "side-link active" : "side-link"}>
+        캘린더
+      </Link>
       <div className="side-title side-settings">설정</div>
       <Link href="/settings/phases" className={pathname.startsWith("/settings/phases") ? "side-link active" : "side-link"}>
         단계 관리

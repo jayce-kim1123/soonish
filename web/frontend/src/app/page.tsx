@@ -400,7 +400,6 @@ export default function TimelinePage() {
                 <div className="tl-track" style={{ width: totalDays * dayWidth }}>
                   <span className="tl-section-links" style={{ left: LEFT_WIDTH + 12 }}>
                     <Link href={`/projects/${project.key}`}>이슈 목록</Link>
-                    <Link href={`/projects/${project.key}/calendar`}>캘린더</Link>
                     <button className="link" onClick={() => removeProject(project)}>
                       프로젝트 삭제
                     </button>
