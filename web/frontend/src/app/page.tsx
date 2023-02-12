@@ -398,7 +398,6 @@ export default function TimelinePage() {
                   <span className="tl-count">{row.board.issues.length}</span>
                 </div>
                 <div className="tl-track" style={{ width: totalDays * dayWidth }}>
-                  {gridLines}
                   <span className="tl-section-links" style={{ left: LEFT_WIDTH + 12 }}>
                     <Link href={`/projects/${project.key}`}>이슈 목록</Link>
                     <Link href={`/projects/${project.key}/calendar`}>캘린더</Link>

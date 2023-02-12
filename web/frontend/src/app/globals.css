@@ -564,6 +564,11 @@ button.active {
   background: #2a2a2e;
 }
 
+/* 머리글 줄의 타임라인 영역은 격자 없이 단색으로 채워서 링크가 잘 읽히게 한다. */
+.tl-section .tl-track {
+  background: #2a2a2e;
+}
+
 .tl-section .project-title {
   flex: 1;
   min-width: 0;
