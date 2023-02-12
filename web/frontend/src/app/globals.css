@@ -753,7 +753,6 @@ button.active {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 560px;
   max-width: 100vw;
   box-sizing: border-box;
   padding: 20px 24px 48px;
@@ -779,4 +778,31 @@ button.active {
     transform: translateX(40px);
     opacity: 0;
   }
+}
+
+/* 드로워 왼쪽 가장자리의 폭 조절 손잡이. 끄는 동안에는 선이 진하게 보인다. */
+.drawer-resize {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  z-index: 5;
+  width: 9px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.drawer-resize::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  content: "";
+  background: transparent;
+}
+
+.drawer-resize:hover::after,
+.drawer-resize.active::after {
+  background: #4a90e2;
 }
