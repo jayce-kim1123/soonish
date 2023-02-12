@@ -833,3 +833,17 @@ button.active {
   margin: 6px 0 10px;
   font-size: 0.85rem;
 }
+
+/* 화면 제목 줄. 제목은 왼쪽에, 주 버튼은 오른쪽 끝에 둔다. */
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+button.primary {
+  color: #fff;
+  background: #4a90e2;
+  border-color: #4a90e2;
+}

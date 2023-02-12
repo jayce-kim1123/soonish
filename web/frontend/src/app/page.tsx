@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ErrorNote from "../components/ErrorNote";
 import IssueContextMenu from "../components/IssueContextMenu";
 import IssueDrawer from "../components/IssueDrawer";
+import NewProjectModal from "../components/NewProjectModal";
 import PhaseChips from "../components/PhaseChips";
 import PhaseModal from "../components/PhaseModal";
 import ProjectSettingsModal from "../components/ProjectSettingsModal";
@@ -59,6 +60,7 @@ export default function TimelinePage() {
   const [phaseModal, setPhaseModal] = useState<{ board: Board; issue: Issue; phase: Phase } | null>(null);
   const [editing, setEditing] = useState<{ ref: string; value: string } | null>(null);
   const editingRef = useRef(false);
+  const [creating, setCreating] = useState(false);
   const [settings, setSettings] = useState<Project | null>(null);
   const [drawer, setDrawer] = useState<{ projectKey: string; number: number } | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number; board: Board; issue: Issue } | null>(null);
@@ -323,7 +325,12 @@ export default function TimelinePage() {
 
   return (
     <main className="wide">
-      <h1>타임라인</h1>
+      <div className="page-head">
+        <h1>타임라인</h1>
+        <button className="primary" onClick={() => setCreating(true)}>
+          + 새 프로젝트
+        </button>
+      </div>
       <PhaseChips phases={phases} visible={visible} onToggle={toggle} />
       <div className="row">
         {Object.keys(ZOOMS).map((name) => (
@@ -463,7 +470,7 @@ export default function TimelinePage() {
           );
         })}
         {loaded && boards.length === 0 && (
-          <p className="muted empty">아직 프로젝트가 없습니다. 왼쪽 아래의 &quot;+ 새 프로젝트&quot;로 첫 프로젝트를 만들어 주세요.</p>
+          <p className="muted empty">아직 프로젝트가 없습니다. 오른쪽 위의 &quot;+ 새 프로젝트&quot;로 첫 프로젝트를 만들어 주세요.</p>
         )}
       </div>
       {menu && (
@@ -483,6 +490,7 @@ export default function TimelinePage() {
           }}
         />
       )}
+      {creating && <NewProjectModal onClose={() => setCreating(false)} onCreated={load} />}
       {settings && <ProjectSettingsModal project={settings} onClose={() => setSettings(null)} onDeleted={load} />}
       {drawer && (
         <IssueDrawer projectKey={drawer.projectKey} number={drawer.number} onClose={() => setDrawer(null)} onChanged={load} />
