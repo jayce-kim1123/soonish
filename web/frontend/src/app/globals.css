@@ -690,7 +690,9 @@ button.active {
 }
 
 .modal {
-  width: 420px;
+  width: 480px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   max-width: calc(100vw - 32px);
   padding: 20px;
   background: #1f1f23;
@@ -846,4 +848,116 @@ button.primary {
   color: #fff;
   background: #4a90e2;
   border-color: #4a90e2;
+}
+
+/* 이슈 목록 화면 */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  margin: 12px 0 16px;
+  background: #8881;
+  border: 1px solid #8883;
+  border-radius: 8px;
+}
+
+.filter-bar input:not([type="checkbox"]) {
+  flex: 1;
+  min-width: 200px;
+}
+
+.issue-list {
+  overflow: hidden;
+  border: 1px solid #8883;
+  border-radius: 8px;
+}
+
+.issue-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 3fr) 90px 90px 70px minmax(100px, 1.2fr) 90px minmax(130px, 1.2fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #8882;
+}
+
+.issue-row:not(.issue-head):hover {
+  cursor: pointer;
+  background: #8882;
+}
+
+.issue-head {
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.65;
+  background: #8881;
+}
+
+.issue-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  cursor: pointer;
+  background: #2a2a2e;
+  border-top: 2px solid #8885;
+  border-bottom: 1px solid #8885;
+}
+
+.issue-title {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.issue-title > span:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.small {
+  font-size: 0.72rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  background: #8883;
+  border-radius: 999px;
+}
+
+.badge.doing {
+  background: #4a90e244;
+}
+
+.badge.done {
+  background: #7cb34244;
+}
+
+.badge.priority-low {
+  background: #8883;
+}
+
+.badge.priority-medium {
+  background: #4a90e233;
+}
+
+.badge.priority-high {
+  background: #f5a62344;
+}
+
+.badge.priority-urgent {
+  background: #e24a4a55;
+}
+
+.phase-dots {
+  display: flex;
+  gap: 4px;
 }

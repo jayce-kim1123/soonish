@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { api } from "../lib/api";
-import { Project } from "../lib/types";
+import { Project, Status } from "../lib/types";
 import ErrorNote from "./ErrorNote";
+import StatusPanel from "./StatusPanel";
 
 /**
- * 프로젝트 설정 모달. 지금은 프로젝트 삭제만 할 수 있다.
+ * 프로젝트 설정 모달. 이 프로젝트의 상태 목록을 관리하고, 프로젝트를 삭제할 수 있다.
  *
  * @param project 대상 프로젝트.
  * @param onClose 모달을 닫을 때 부르는 함수.
@@ -23,6 +24,13 @@ export default function ProjectSettingsModal({
   onDeleted: () => void;
 }) {
   const [error, setError] = useState<string | null>(null);
+  const [statuses, setStatuses] = useState<Status[]>([]);
+
+  const loadStatuses = useCallback(() => {
+    api<Status[]>(`/projects/${project.key}/statuses`).then(setStatuses).catch((e) => setError(e.message));
+  }, [project.key]);
+
+  useEffect(loadStatuses, [loadStatuses]);
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -49,6 +57,7 @@ export default function ProjectSettingsModal({
           {project.key} · {project.name}
         </p>
         <ErrorNote message={error} />
+        <StatusPanel projectKey={project.key} statuses={statuses} onChange={loadStatuses} />
         <div className="danger-zone">
           <strong>프로젝트 삭제</strong>
           <p className="muted">프로젝트와 그 안의 모든 이슈, 댓글, 일정이 함께 지워지고 되돌릴 수 없습니다.</p>

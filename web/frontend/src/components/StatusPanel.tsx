@@ -64,7 +64,8 @@ export default function StatusPanel({
         {statuses.map((status) => (
           <li key={status.id}>
             <span>
-              {status.name} <span className="muted">({CATEGORY_LABEL[status.category]})</span>
+              {status.name}
+              {status.name !== CATEGORY_LABEL[status.category] && <span className="muted"> ({CATEGORY_LABEL[status.category]})</span>}
             </span>
             <span>
               <button className="link" onClick={() => move(status, -1)}>

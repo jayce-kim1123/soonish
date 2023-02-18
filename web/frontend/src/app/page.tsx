@@ -403,9 +403,6 @@ export default function TimelinePage() {
                   </button>
                 </div>
                 <div className="tl-track" style={{ width: totalDays * dayWidth }}>
-                  <span className="tl-section-links" style={{ left: LEFT_WIDTH + 12 }}>
-                    <Link href={`/projects/${project.key}`}>이슈 목록</Link>
-                  </span>
                 </div>
               </div>
             );

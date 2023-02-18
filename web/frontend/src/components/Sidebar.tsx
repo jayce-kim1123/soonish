@@ -18,6 +18,9 @@ export default function Sidebar() {
       <Link href="/" className={pathname === "/" ? "side-link active" : "side-link"}>
         타임라인
       </Link>
+      <Link href="/issues" className={pathname.startsWith("/issues") ? "side-link active" : "side-link"}>
+        이슈 목록
+      </Link>
       <Link href="/calendar" className={pathname.startsWith("/calendar") ? "side-link active" : "side-link"}>
         캘린더
       </Link>
